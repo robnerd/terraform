@@ -4,17 +4,17 @@
 
 #ECS cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "test-ecs-cluster"
+  name = "${var.web_app_name}-ecs-cluster"
 }
 
 #The Task Definition used in conjunction with the ECS service
 resource "aws_ecs_task_definition" "task_definition" {
-  family = "test-family"
+  family = "${var.web_app_name}-task-family"
   # container definitions describes the configurations for the task
   container_definitions = jsonencode(
     [
       {
-        "name" : "test-container",
+        "name" : "${var.web_app_name}-container",
         "image" : "${aws_ecr_repository.ecr.repository_url}:latest",
         "entryPoint" : []
         "essential" : true,
@@ -46,7 +46,7 @@ resource "aws_ecs_task_definition" "task_definition" {
 
 #The ECS service described. This resources allows you to manage tasks
 resource "aws_ecs_service" "ecs_service" {
-  name                = "test-ecs-service"
+  name                = "${var.web_app_name}-ecs-service"
   cluster             = aws_ecs_cluster.ecs_cluster.arn
   task_definition     = aws_ecs_task_definition.task_definition.arn
   launch_type         = "FARGATE"
@@ -62,7 +62,7 @@ resource "aws_ecs_service" "ecs_service" {
   # This block registers the tasks to a target group of the loadbalancer.
   load_balancer {
     target_group_arn = aws_lb_target_group.target_group.arn #the target group defined in the alb file
-    container_name   = "test-container"
+    container_name   = "${var.web_app_name}-container"
     container_port   = var.container_port
   }
   depends_on = [aws_lb_listener.listener]
