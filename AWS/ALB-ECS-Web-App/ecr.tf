@@ -4,7 +4,7 @@
 
 #Creation of the ECR repo
 resource "aws_ecr_repository" "ecr" {
-  name = "${var.web_app_name}-repo"
+  name = "${var.web_app_name}-repo-${var.environment_name}"
 }
 
 #The ECR policy describes the management of images in the repo
@@ -34,12 +34,14 @@ locals {
   })
 }
 
+data "aws_region" "current" {}
+
 #The commands below are used to build and push a docker image of the application in the app folder
 locals {
-  docker_login_command = "aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${local.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+  docker_login_command = "aws ecr get-login-password --region ${data.aws_region.current.region} | docker login --username AWS --password-stdin ${local.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com"
   docker_build_command = "docker build -t ${aws_ecr_repository.ecr.name} ./app"
-  docker_tag_command   = "docker tag ${aws_ecr_repository.ecr.name}:latest ${local.account_id}.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.ecr.name}:latest"
-  docker_push_command  = "docker push ${local.account_id}.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.ecr.name}:latest"
+  docker_tag_command   = "docker tag ${aws_ecr_repository.ecr.name}:latest ${local.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${aws_ecr_repository.ecr.name}:latest"
+  docker_push_command  = "docker push ${local.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${aws_ecr_repository.ecr.name}:latest"
 }
 
 #This resource authenticates you to the ECR service

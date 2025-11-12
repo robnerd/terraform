@@ -1,89 +1,31 @@
-###################################################################################
-# This file describes the vpc, internet gateway, nat gateway and route tables
-###################################################################################
-
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      #version = "~> 5.1.0"
+      version = "~> 6.18.0"
+    }
+  }
 }
 
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
+provider "aws" {
+  #this provider region is hardcoded in "aws_dynamodb_table and "aws_vpc_endpoint"
+  alias  = "primary"
+  region = "us-east-2"
 }
 
-resource "aws_nat_gateway" "ngw" {
-  allocation_id = aws_eip.nateip.id
-  subnet_id     = aws_subnet.public_subnet_1.id
-  depends_on    = [aws_internet_gateway.igw]
+/*
+provider "aws" {
+  alias  = "secondary"
+  region = "us-east-1" #secondary region for DR
 }
 
-resource "aws_eip" "nateip" {
-  domain = "vpc"
-}
+# the below is required in order to reference in databases.tf
+data "aws_region" "current" {}
 
-resource "aws_subnet" "private_subnet_1" {
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = var.private_subnet_1
-  availability_zone = var.availability_zone_1
-}
 
-resource "aws_subnet" "private_subnet_2" {
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = var.private_subnet_2
-  availability_zone = var.availability_zone_2
+data "aws_region" "alternate" {
+  provider = "awsalternate"
 }
+*/
 
-resource "aws_subnet" "public_subnet_1" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_subnet_1
-  availability_zone       = var.availability_zone_1
-  map_public_ip_on_launch = true
-}
-
-resource "aws_subnet" "public_subnet_2" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_subnet_2
-  availability_zone       = var.availability_zone_2
-  map_public_ip_on_launch = true
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.vpc.id
-}
-
-resource "aws_route" "public" {
-  route_table_id         = aws_route_table.public.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.igw.id
-}
-
-resource "aws_route_table_association" "public1" {
-  subnet_id      = aws_subnet.public_subnet_1.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public2" {
-  subnet_id      = aws_subnet.public_subnet_2.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.vpc.id
-}
-
-resource "aws_route" "private" {
-  route_table_id         = aws_route_table.private.id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.ngw.id
-}
-
-resource "aws_route_table_association" "private1" {
-  subnet_id      = aws_subnet.private_subnet_1.id
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "private2" {
-  subnet_id      = aws_subnet.private_subnet_2.id
-  route_table_id = aws_route_table.private.id
-}

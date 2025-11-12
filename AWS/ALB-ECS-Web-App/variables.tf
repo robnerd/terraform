@@ -1,8 +1,12 @@
-variable "region" {
+variable "region_primary" {
   description = "Main region for all resources"
   type        = string
 }
 
+variable "region_secondary" {
+  description = "Secondary region for some resources for DR"
+  type        = string
+}
 variable "vpc_cidr" {
   type        = string
   description = "CIDR block for the main VPC"
@@ -17,6 +21,7 @@ variable "public_subnet_2" {
   type        = string
   description = "CIDR block for public subnet 2"
 }
+
 
 variable "private_subnet_1" {
   type        = string
@@ -68,3 +73,20 @@ variable "web_app_name" {
   type        = string
 }
 
+# Route 53 Variables
+variable "create_dns_zone" {
+  description = "If true, create new route53 zone, if false read existing route53 zone"
+  type        = bool
+  default     = false
+}
+
+variable "domain" {
+  description = "Domain for website"
+  type        = string
+}
+
+variable "environment_name" {
+  description = "Deployment environment (dev/staging/production)"
+  type        = string
+  default     = "staging"
+}

@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 resource "aws_security_group" "ecs_sg" {
   vpc_id                 = aws_vpc.vpc.id
-  name                   = "${var.web_app_name}-sg-ecs"
+  name                   = "${var.web_app_name}-sg-ecs-${var.environment_name}"
   description            = "Security group for ecs app"
   revoke_rules_on_delete = true
 }
@@ -37,7 +37,7 @@ resource "aws_security_group_rule" "ecs_all_egress" {
 # ------------------------------------------------------------------------------
 resource "aws_security_group" "alb_sg" {
   vpc_id                 = aws_vpc.vpc.id
-  name                   = "${var.web_app_name}-sg-alb"
+  name                   = "${var.web_app_name}-sg-alb-${var.environment_name}"
   description            = "Security group for alb"
   revoke_rules_on_delete = true
 }

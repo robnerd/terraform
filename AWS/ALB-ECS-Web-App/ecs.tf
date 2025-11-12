@@ -4,17 +4,17 @@
 
 #ECS cluster
 resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "${var.web_app_name}-ecs-cluster"
+  name = "${var.web_app_name}-ecs-cluster-${var.environment_name}"
 }
 
 #The Task Definition used in conjunction with the ECS service
 resource "aws_ecs_task_definition" "task_definition" {
-  family = "${var.web_app_name}-task-family"
+  family = "${var.web_app_name}-task-family-${var.environment_name}"
   # container definitions describes the configurations for the task
   container_definitions = jsonencode(
     [
       {
-        "name" : "${var.web_app_name}-container",
+        "name" : "${var.web_app_name}-container-${var.environment_name}",
         "image" : "${aws_ecr_repository.ecr.repository_url}:latest",
         "entryPoint" : []
         "essential" : true,
@@ -35,23 +35,26 @@ resource "aws_ecs_task_definition" "task_definition" {
       }
     ]
   )
-  #Fargate is used as opposed to EC2, so we do not need to manage the EC2 instances. Fargate is serveless
+  #Fargate is serveless, no EC2 instances required
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.ecsTaskExecutionRole.arn
-  task_role_arn            = aws_iam_role.ecsTaskRole.arn
+  #execution_role_arn = aws_iam_role.ecs-task-execution-role.id
+  #task_role_arn = aws_iam_role.ecsTaskRole.arn
+  task_role_arn = aws_iam_role.ecs-task-role.arn
 }
 
-#The ECS service described. This resources allows you to manage tasks
+#The ECS service described to manage tasks
 resource "aws_ecs_service" "ecs_service" {
-  name                = "${var.web_app_name}-ecs-service"
-  cluster             = aws_ecs_cluster.ecs_cluster.arn
-  task_definition     = aws_ecs_task_definition.task_definition.arn
-  launch_type         = "FARGATE"
-  scheduling_strategy = "REPLICA"
-  desired_count       = 2 # the number of tasks you wish to run
+  name                   = "${var.web_app_name}-ecs-service-${var.environment_name}"
+  cluster                = aws_ecs_cluster.ecs_cluster.arn
+  task_definition        = aws_ecs_task_definition.task_definition.arn
+  launch_type            = "FARGATE"
+  scheduling_strategy    = "REPLICA"
+  desired_count          = 2    # the number of tasks you wish to run
+  enable_execute_command = true # allows execution at the container level, useful for troubleshooting
 
   network_configuration {
     subnets          = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
@@ -62,7 +65,7 @@ resource "aws_ecs_service" "ecs_service" {
   # This block registers the tasks to a target group of the loadbalancer.
   load_balancer {
     target_group_arn = aws_lb_target_group.target_group.arn #the target group defined in the alb file
-    container_name   = "${var.web_app_name}-container"
+    container_name   = "${var.web_app_name}-container-${var.environment_name}"
     container_port   = var.container_port
   }
   depends_on = [aws_lb_listener.listener]

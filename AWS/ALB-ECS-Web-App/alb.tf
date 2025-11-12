@@ -4,16 +4,17 @@
 
 #Defining the Application Load Balancer
 resource "aws_alb" "application_load_balancer" {
-  name               = "${var.web_app_name}-alb"
+  name               = "${var.web_app_name}-alb-${var.environment_name}"
   internal           = false
   load_balancer_type = "application"
-  subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
-  security_groups    = [aws_security_group.alb_sg.id]
+  #subnets            = [for subnet in aws_subnet.public : subnet.id]
+  subnets         = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+  security_groups = [aws_security_group.alb_sg.id]
 }
 
 #Defining the target group and a health check on the application
 resource "aws_lb_target_group" "target_group" {
-  name        = "${var.web_app_name}-tg"
+  name        = "${var.web_app_name}-tg-${var.environment_name}"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
